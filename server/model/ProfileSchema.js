@@ -4,12 +4,12 @@ const { Schema } = mongoose;
 
 const ProfileSchema = new Schema(
   {
-    firstName: { type: String, required: true },
-    lastName: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    phone: { type: String, required: true },
-    address: { type: String, required: true },
-    city: { type: String, required: true },
+    firstName: { type: String, default: "" },
+    lastName: { type: String, default: "" },
+    email: { type: String, default: ""   },
+    phone: { type: String, default: "" },
+    address: { type: String, default: "" },
+    city: { type: String, default: "" },
   },
   { timestamps: true }
 );

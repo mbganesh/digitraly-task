@@ -8,9 +8,12 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import CancelIcon from '@mui/icons-material/Cancel';
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import CancelIcon from "@mui/icons-material/Cancel";
+import { useDeleteUser, useUserList } from "ApiHelper";
+import { Box, IconButton, Tooltip, Typography } from "@mui/material";
+import { toast } from "react-toastify";
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
@@ -32,42 +35,89 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   },
 }));
 
-function createData(name, calories, fat, carbs, protein) {
-  return { name, calories, fat, carbs, protein };
-}
+const UserTable = ({ open, setOpen,setUpdateUser }) => {
+  const { data, isLoading, isError } = useUserList({});
 
-const rows = [
-    createData("Frozen yoghurt", 159, 6.0, 24, 4.0),
-    createData("Ice cream sandwich", 237, 9.0, 37, 4.3)
-];
+  const deleteUserMutation = useDeleteUser();
 
-const UserTable = () => {
+  const handleUpdateClickBtn = async (_id) => {
+    console.log(_id , '_IDDDDDDDDDDDDd');
+    setUpdateUser(_id)
+    setOpen(!open)
+    // await deleteUserMutation.mutateAsync({ _id });
+    // toast.success("User Deleted Successfully");
+  };
+
+  const handleDeleteBtn = async (_id) => {
+    console.log(_id);
+    await deleteUserMutation.mutateAsync({ _id });
+    toast.success("User Deleted Successfully");
+  };
+
+  if (isLoading) {
+    return <Box>Loading...</Box>;
+  }
+
   return (
     <TableContainer component={Paper}>
-      <Table sx={{ minWidth: 700 }} aria-label="customized table" >
+      <Table sx={{ minWidth: 700 }} aria-label="customized table">
         <TableHead>
           <TableRow>
-            <StyledTableCell>Dessert (100g serving)</StyledTableCell>
-            <StyledTableCell align="right">Calories</StyledTableCell>
-            <StyledTableCell align="right">Fat&nbsp;(g)</StyledTableCell>
-            <StyledTableCell align="right">Carbs&nbsp;(g)</StyledTableCell>
-            <StyledTableCell align="right">Protein&nbsp;(g)</StyledTableCell>
+            <StyledTableCell>Name</StyledTableCell>{" "}
+            {/* firstName + lastName  */}
+            <StyledTableCell align="right">Email</StyledTableCell>
+            <StyledTableCell align="right">Phone</StyledTableCell>
+            <StyledTableCell align="right">Address</StyledTableCell>
+            <StyledTableCell align="right">City</StyledTableCell>
+            <StyledTableCell align="right">Edit</StyledTableCell>
+            <StyledTableCell align="right">Delete</StyledTableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {rows.map((row) => (
-            <StyledTableRow key={row.name}>
-              <StyledTableCell component="th" scope="row">
-                {row.name}
-              </StyledTableCell>
-              <StyledTableCell align="right">{row.calories}</StyledTableCell>
-              <StyledTableCell align="right">{row.fat}</StyledTableCell>
-              <StyledTableCell align="right">{row.carbs}</StyledTableCell>
-              <StyledTableCell align="right">{row.protein}</StyledTableCell>
-            </StyledTableRow>
-          ))}
+          {data?.data?.data?.map(
+            ({ _id, firstName, lastName, email, phone, address, city }) => (
+              <StyledTableRow key={_id}>
+                <StyledTableCell component="th" scope="row">
+                  {`${firstName} ${lastName}`}
+                </StyledTableCell>
+                <StyledTableCell align="right">
+                  {email ? email : "-"}
+                </StyledTableCell>
+                <StyledTableCell align="right">
+                  {phone ? phone : "-"}
+                </StyledTableCell>
+                <StyledTableCell align="right">
+                  {address ? address : "-"}
+                </StyledTableCell>
+                <StyledTableCell align="right">
+                  {city ? city : "-"}
+                </StyledTableCell>
+                <StyledTableCell align="right">
+                  <Tooltip title="Edit">
+                    <IconButton onClick={() => handleUpdateClickBtn(_id)}>
+                      <EditIcon sx={{ color: "orange" }} />
+                    </IconButton>
+                  </Tooltip>
+                </StyledTableCell>
+                <StyledTableCell align="right">
+                  <Tooltip title="Delete">
+                    <IconButton onClick={() => handleDeleteBtn(_id)}>
+                      <DeleteIcon sx={{ color: "red" }} />
+                    </IconButton>
+                  </Tooltip>
+                </StyledTableCell>
+              </StyledTableRow>
+            )
+          )}
         </TableBody>
       </Table>
+      {!data?.data?.data?.length ? (
+        <Box sx={{ width: "100%", fontWeight: "bold" }}>
+          <Typography variant="h6" textAlign="center" m={2} p={2}>
+            No Data
+          </Typography>
+        </Box>
+      ) : null}
     </TableContainer>
   );
 };

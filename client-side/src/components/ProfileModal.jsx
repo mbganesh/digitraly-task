@@ -3,6 +3,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
+import { Controller, useForm } from "react-hook-form";
 
 import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
@@ -11,7 +12,11 @@ import Checkbox from "@mui/material/Checkbox";
 
 import AddIcon from "@mui/icons-material/Add";
 
-import CancelIcon from '@mui/icons-material/Cancel';
+import CancelIcon from "@mui/icons-material/Cancel";
+import { toast } from "react-toastify";
+import { useAddUser } from "ApiHelper";
+import { useGtUser } from "../ApiHelper";
+import { useEffect } from "react";
 
 const style = {
   position: "absolute",
@@ -25,79 +30,232 @@ const style = {
   p: 4,
 };
 
-const ProfileModal = ({ open, setOpen }) => {
+var defaultValues = {
+  firstName: "",
+  lastName: "",
+  phone: "",
+  email: "",
+  address: "",
+  city: "",
+};
+
+const ProfileModal = ({ open, setOpen, updateUser, setUpdateUser }) => {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
+  const addUserMutation = useAddUser();
+  const getUserMutation = useGtUser();
+
+  console.log("updateUserupdateUser", updateUser);
+
+  const { control, handleSubmit, setError, reset } = useForm({
+    reValidateMode: "onChange",
+    defaultValues,
+  });
+
+  const handleOnSubmit = async ({
+    firstName,
+    lastName,
+    phone,
+    address,
+    email,
+    city,
+  }) => {
+    console.table({
+      firstName,
+      lastName,
+      phone,
+      address,
+      email,
+      city,
+    });
+
+    // if (!userNumber) {
+    //   setError("userNumber", {
+    //     type: "custom",
+    //     message: "Please enter user phone number",
+    //   });
+    //   return;
+    // }
+    let result = await addUserMutation.mutateAsync({
+      firstName,
+      lastName,
+      phone,
+      address,
+      email,
+      city,
+    });
+
+    if (!result?.data?.status) {
+      toast.error(result?.data?.message);
+      return;
+    }
+
+    toast.success("User Added Successfully");
+    reset(defaultValues);
+    handleClose();
+  };
+
+  const handleCancelBtn = () => {
+    reset(defaultValues);
+    handleClose();
+  };
+
+  const getUserData = async () => {
+    if (updateUser) {
+      let result = (await getUserMutation.mutateAsync({ _id: updateUser })).data;
+      console.log(result, "result");
+      reset(result?.data?.data);
+    }
+  };
+  useEffect(() => {
+    if (updateUser !== '') {
+      console.log("is already");
+      getUserData();
+    }
+  }, []);
+
   return (
     <div>
-      <Button onClick={handleOpen}>Open modal</Button>
       <Modal
         open={open}
-        onClose={handleClose}
+        onClose={() => {
+          handleClose();
+          setUpdateUser("");
+        }}
         aria-labelledby="modal-modal-title"
         aria-describedby="modal-modal-description"
+        backdrop="static"
       >
         <Box sx={style}>
           <Typography variant="h6" gutterBottom>
-            New Profile
+            {`${updateUser ? "Update Profile" : "Create Profile"}`}
           </Typography>
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                id="firstName"
-                name="firstName"
-                label="First name"
-                fullWidth
-                autoComplete="given-name"
-                variant="standard"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                id="lastName"
-                name="lastName"
-                label="Last name"
-                fullWidth
-                autoComplete="family-name"
-                variant="standard"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                required
-                id="address1"
-                name="address1"
-                label="Address line 1"
-                fullWidth
-                autoComplete="shipping address-line1"
-                variant="standard"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                id="address2"
-                name="address2"
-                label="Address line 2"
-                fullWidth
-                autoComplete="shipping address-line2"
-                variant="standard"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                id="city"
-                name="city"
-                label="City"
-                fullWidth
-                autoComplete="shipping address-level2"
-                variant="standard"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
+          <form onSubmit={handleSubmit(handleOnSubmit)}>
+            <Grid container spacing={3}>
+              <Grid item xs={12} sm={6}>
+                <Controller
+                  name={"firstName"}
+                  control={control}
+                  render={({
+                    field: { onChange, value },
+                    fieldState: { error },
+                  }) => (
+                    <TextField
+                      helperText={error ? error.message : null}
+                      required
+                      autoFocus
+                      id="firstName"
+                      name="firstName"
+                      label="First name"
+                      error={!!error}
+                      onChange={onChange}
+                      value={value}
+                      fullWidth
+                      autoComplete="given-name"
+                      variant="standard"
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Controller
+                  name="lastName"
+                  control={control}
+                  render={({
+                    field: { onChange, value },
+                    fieldState: { error },
+                  }) => (
+                    <TextField
+                      helperText={error ? error.message : null}
+                      required
+                      id="lastName"
+                      name="lastName"
+                      label="Last name"
+                      error={!!error}
+                      onChange={onChange}
+                      value={value}
+                      fullWidth
+                      autoComplete="given-name"
+                      variant="standard"
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Controller
+                  name="email"
+                  control={control}
+                  render={({
+                    field: { onChange, value },
+                    fieldState: { error },
+                  }) => (
+                    <TextField
+                      helperText={error ? error.message : null}
+                      required
+                      id="email"
+                      name="email"
+                      label="Email Address"
+                      error={!!error}
+                      onChange={onChange}
+                      value={value}
+                      fullWidth
+                      autoComplete="given-name"
+                      variant="standard"
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Controller
+                  name="address"
+                  control={control}
+                  render={({
+                    field: { onChange, value },
+                    fieldState: { error },
+                  }) => (
+                    <TextField
+                      helperText={error ? error.message : null}
+                      required
+                      id="address"
+                      name="address"
+                      label="Address"
+                      error={!!error}
+                      onChange={onChange}
+                      value={value}
+                      fullWidth
+                      autoComplete="given-name"
+                      variant="standard"
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <Controller
+                  name="phone"
+                  control={control}
+                  render={({
+                    field: { onChange, value },
+                    fieldState: { error },
+                  }) => (
+                    <TextField
+                      helperText={error ? error.message : null}
+                      required
+                      id="phone"
+                      name="phone"
+                      label="Phone Number"
+                      error={!!error}
+                      onChange={onChange}
+                      value={value}
+                      fullWidth
+                      autoComplete="given-name"
+                      variant="standard"
+                    />
+                  )}
+                />
+              </Grid>
+              {/* <Grid item xs={12} sm={6}>
               <TextField
                 id="state"
                 name="state"
@@ -105,19 +263,32 @@ const ProfileModal = ({ open, setOpen }) => {
                 fullWidth
                 variant="standard"
               />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                id="zip"
-                name="zip"
-                label="Zip / Postal code"
-                fullWidth
-                autoComplete="shipping postal-code"
-                variant="standard"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
+            </Grid> */}
+              <Grid item xs={12} sm={6}>
+                <Controller
+                  name="city"
+                  control={control}
+                  render={({
+                    field: { onChange, value },
+                    fieldState: { error },
+                  }) => (
+                    <TextField
+                      helperText={error ? error.message : null}
+                      required
+                      id="city"
+                      name="city"
+                      label="City"
+                      error={!!error}
+                      onChange={onChange}
+                      value={value}
+                      fullWidth
+                      autoComplete="given-name"
+                      variant="standard"
+                    />
+                  )}
+                />
+              </Grid>
+              {/* <Grid item xs={12} sm={6}>
               <TextField
                 required
                 id="country"
@@ -127,12 +298,38 @@ const ProfileModal = ({ open, setOpen }) => {
                 autoComplete="shipping country"
                 variant="standard"
               />
+            </Grid> */}
+              <Box
+                sx={{
+                  width: "100%",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 5,
+                  padding: "10px",
+                  margin: "10px 5px 0px 5px",
+                }}
+              >
+                <Button
+                  sx={{ textTransform: "none" }}
+                  variant="contained"
+                  color="success"
+                  endIcon={<AddIcon />}
+                  type="submit"
+                >
+                  {updateUser ? "Update" : "Create"}
+                </Button>
+                <Button
+                  sx={{ textTransform: "none" }}
+                  variant="outlined"
+                  color="error"
+                  endIcon={<CancelIcon />}
+                  onClick={() => handleCancelBtn()}
+                >
+                  Cancel
+                </Button>
+              </Box>
             </Grid>
-            <Box sx={{width:'100%', display:'flex', justifyContent:'space-between', gap:5, padding:'10px' , margin:'5px' }}>
-              <Button sx={{textTransform:'none' , }} variant="contained" color="success" endIcon={<AddIcon/>}>Save</Button>
-              <Button sx={{textTransform:'none' , }} variant="outlined" color="error" endIcon={<CancelIcon/>}>Cancel</Button>
-            </Box>
-          </Grid>
+          </form>
         </Box>
       </Modal>
     </div>

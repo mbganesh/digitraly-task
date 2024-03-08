@@ -23,7 +23,22 @@ router.get("/user-list", async (req, res) => {
   }
 });
 
-router.get("/user-add", async (req, res) => {
+router.post("/user-single-data", async (req, res) => {
+  try {
+    const reqData = req.body; // {_id}
+    let data = await Profile.findOne({ _id: reqData._id });
+    let respData = {
+      status: true,
+      data: data,
+    };
+    res.json(respData);
+  } catch (error) {
+    console.error(error.message);
+    res.json({ status: false, message: "Something went wrong!" });
+  }
+});
+
+router.post("/user-add", async (req, res) => {
   try {
     const reqData = req.body;
     await Profile.create(reqData);
@@ -38,7 +53,7 @@ router.get("/user-add", async (req, res) => {
   }
 });
 
-router.get("/user-delete", async (req, res) => {
+router.post("/user-delete", async (req, res) => {
   try {
     const reqData = req.body;
     await Profile.findOneAndDelete({ _id: reqData._id });
@@ -53,7 +68,7 @@ router.get("/user-delete", async (req, res) => {
   }
 });
 
-router.get("/user-update", async (req, res) => {
+router.post("/user-update", async (req, res) => {
   try {
     const reqData = req.body;
     let findQuery = { _id: reqData._id };
